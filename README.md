@@ -27,6 +27,14 @@ The system consists of 5 independent distributed services:
 | Alert System | Apache Kafka | 9092 | Real-time alert messaging |
 | Dashboard | Web App | 8090 | Data visualization & monitoring |
 
+```
+  Humidity ── REST ──┐
+  Temperature ─ SOAP ┤
+  pH ───────── RMI ──┼──> MySQL (sunflower_farm) ──> Dashboard (:8090)
+  Weather ──── TCP ──┘
+  Alert producer ── Kafka topic "sunflower-alerts" ──> Alert consumer
+```
+
 ## 🚀 Technologies Used
 
 - **Backend**: Java 17, Maven
@@ -40,71 +48,64 @@ The system consists of 5 independent distributed services:
 
 - JDK 17 or higher
 - Apache Maven
-- MySQL Server
-- Apache Kafka
+- Docker Desktop (runs MySQL and Kafka for you), or local MySQL 8 + Kafka installs
 - IntelliJ IDEA (recommended) or any Java IDE
 
 ## ⚙️ Installation & Setup
 
-### 1. Database Setup
-```sql
-CREATE DATABASE sunflower_farm;
--- Run the provided database-setup.sql script
+### 1. Start MySQL and Kafka
+
+```bash
+docker compose up -d
 ```
 
-### 2. Start Kafka
+This starts MySQL on `localhost:3307` (it creates the `sunflower_farm` schema from
+[`database-setup.sql`](database-setup.sql) on first start) and Kafka on `localhost:9092`.
+The `sunflower-alerts` topic is created automatically.
+
+<details>
+<summary>Without Docker</summary>
+
+Create the schema with `mysql -u root -p < database-setup.sql`, start Kafka, and create the topic:
+
 ```bash
-# Start Zookeeper
-.\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
-
-# Start Kafka (in new terminal)
-.\bin\windows\kafka-server-start.bat .\config\server.properties
-
-# Create topic
 .\bin\windows\kafka-topics.bat --create --topic sunflower-alerts --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
 ```
 
-### 3. Configure Database Password
-Update the password in each service's `DatabaseManager.java`:
-```java
-private static final String PASSWORD = "your_password_here";
+If your MySQL is not on port 3307, set `DB_URL` (see below).
+</details>
+
+### 2. Configuration
+
+Every service reads its settings from environment variables. The defaults match `docker compose`,
+so you only need these if your setup differs:
+
+| Variable | Default | Used by |
+|----------|---------|---------|
+| `DB_URL` | `jdbc:mysql://localhost:3307/sunflower_farm` | all services, dashboard |
+| `DB_USER` | `root` | all services, dashboard |
+| `DB_PASSWORD` | `root` | all services, dashboard, docker compose |
+| `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | alert service |
+
+### 3. Build
+
+```bash
+mvn package
 ```
+
+The root `pom.xml` builds all six modules at once.
 
 ### 4. Run Services
 
-Each service can be run independently:
+Run each server's main class from your IDE (or `java -cp` the built jar):
 
-**Humidity Service (REST):**
-```bash
-cd humidity-service
-mvn clean install
-# Run HumidityServer.java
-```
-
-**Temperature Service (SOAP):**
-```bash
-cd temperature-service
-# Run TemperatureServer.java
-```
-
-**pH Service (RMI):**
-```bash
-cd ph-service
-# Run PhRMIServer.java
-```
-
-**Weather Service (TCP):**
-```bash
-cd weather-service
-# Run WeatherTCPServer.java
-```
-
-**Alert System (Kafka):**
-```bash
-cd alert-service
-# Run AlertConsumer.java (listener)
-# Run AlertProducer.java (sender)
-```
+| Service | Main class |
+|---------|-----------|
+| Humidity (REST) | `com.sunflower.farm.HumidityServer` (or `java -jar humidity-service/target/humidity-service-1.0-SNAPSHOT.jar`) |
+| Temperature (SOAP) | `com.sunflower.farm.temperature.TemperatureServer` |
+| pH (RMI) | `com.sunflower.farm.ph.PhRMIServer` |
+| Weather (TCP) | `com.sunflower.farm.weather.WeatherTCPServer` |
+| Alerts (Kafka) | `com.sunflower.farm.alert.AlertConsumer` (listener), `AlertProducer` (sender) |
 
 **Dashboard:**
 ```bash
