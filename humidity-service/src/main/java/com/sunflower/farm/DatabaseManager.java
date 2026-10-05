@@ -11,9 +11,9 @@ import java.util.List;
 public class DatabaseManager {
 
     // Database connection parameters
-    private static final String URL = "jdbc:mysql://localhost:3307/sunflower_farm";
-    private static final String USER = "root";
-    private static final String PASSWORD = "root";
+    private static final String URL = System.getenv().getOrDefault("DB_URL", "jdbc:mysql://localhost:3307/sunflower_farm");
+    private static final String USER = System.getenv().getOrDefault("DB_USER", "root");
+    private static final String PASSWORD = System.getenv().getOrDefault("DB_PASSWORD", "root");
 
     private Connection connection;
 

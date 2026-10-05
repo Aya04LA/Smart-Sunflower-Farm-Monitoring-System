@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Aggregator: `mvn package` from the repo root builds every service. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.sunflower.farm</groupId>
+  <artifactId>sunflower-farm</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>humidity-service</module>
+    <module>temperature-service</module>
+    <module>ph-service</module>
+    <module>weather-service</module>
+    <module>alert-service</module>
+    <module>dashboard</module>
+  </modules>
+</project>
